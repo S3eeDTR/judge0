@@ -1,0 +1,38 @@
+# render.yaml
+services:
+  # 1) Judge0 API server
+  - type: web
+    name: judge0-server
+    runtime: docker                                # build from Dockerfile
+    repo: https://github.com/judge0/judge0         # your fork (must include Dockerfile at root)
+    branch: master
+    dockerfilePath: Dockerfile                     # path to Judge0’s Dockerfile
+    startCommand: ./docker-entrypoint.sh ./scripts/server
+    envVars:
+      # Tell Judge0 where to find Postgres
+      - key: DB_URL
+        fromDatabase:
+          name: judge0-db
+          property: connectionString
+      # Tell Judge0 where to find Redis
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: judge0-redis
+          property: url
+    plan: starter                                   # free plan also works, but starter gives more CPU :contentReference[oaicite:0]{index=0}
+
+  # 2) PostgreSQL for Judge0
+  - type: postgres
+    name: judge0-db
+    databaseName: judge0
+    user: judge0
+    plan: starter
+    diskSizeGB: 10
+
+  # 3) Redis for Judge0’s job queue
+  - type: keyvalue
+    name: judge0-redis
+    plan: free
+    maxmemoryPolicy: allkeys-lru
+render.yaml
